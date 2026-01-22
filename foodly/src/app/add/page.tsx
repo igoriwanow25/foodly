@@ -1,40 +1,34 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useReducer } from 'react';
 import { Container, Navbar, Button, Alert } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import { RecipeSearch } from '../../components/RecipeSearch';
 import { RecipeView } from '../../components/RecipeView';
 import { RecipeEditor } from '../../components/RecipeEditor';
-import { Recipe } from '../../core/types';
-
-type ViewMode = 'search' | 'edit' | 'view';
+import { Recipe } from '../../lib/types';
+import { addRecipeReducer, initialState } from './state';
 
 export default function AddRecipePage() {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>('search');
-  const [currentRecipe, setCurrentRecipe] = useState<Partial<Recipe> | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [state, dispatch] = useReducer(addRecipeReducer, initialState);
+  const { viewMode, currentRecipe, isLoading, error, successMsg } = state;
 
   const handleSearch = async (url: string) => {
-    setIsLoading(true);
-    setError(null);
-    setSuccessMsg(null);
+    dispatch({ type: 'SEARCH_START' });
 
     try {
       const checkRes = await fetch(`/api/recipes?url=${encodeURIComponent(url)}`);
       if (checkRes.ok) {
         const existing = await checkRes.json();
         if (existing && existing.length > 0) {
-            const confirmView = window.confirm('This URL is already in your cookbook. Click OK to view the existing recipe, or Cancel to create a new copy.');
-            if (confirmView) {
-                setCurrentRecipe(existing[0]);
-                setViewMode('view');
-                setIsLoading(false);
-                return;
-            }
+          const confirmView = window.confirm(
+            'This URL is already in your cookbook. Click OK to view the existing recipe, or Cancel to create a new copy.'
+          );
+          if (confirmView) {
+            dispatch({ type: 'SEARCH_EXISTING', payload: existing[0] });
+            return;
+          }
         }
       }
 
@@ -47,49 +41,41 @@ export default function AddRecipePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to fetch recipe');
 
-      setCurrentRecipe(data);
-      setViewMode('edit');
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
+      dispatch({ type: 'SEARCH_SUCCESS', payload: data });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      dispatch({ type: 'SEARCH_ERROR', payload: message });
     }
   };
 
   const handleManualStart = () => {
-      setCurrentRecipe({});
-      setViewMode('edit');
-      setError(null);
-      setSuccessMsg(null);
+    dispatch({ type: 'MANUAL_START' });
   };
 
-  const handleSave = async (recipeData: any) => {
-      setIsLoading(true);
-      setError(null);
-      try {
-          const response = await fetch('/api/recipes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(recipeData)
-          });
-          const savedRecipe = await response.json();
-          if (!response.ok) throw new Error(savedRecipe.error || 'Failed to save');
+  const handleSave = async (recipeData: Partial<Recipe>) => {
+    dispatch({ type: 'SAVE_START' });
+    try {
+      const response = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(recipeData),
+      });
+      const savedRecipe = await response.json();
+      if (!response.ok) throw new Error(savedRecipe.error || 'Failed to save');
 
-          setCurrentRecipe(savedRecipe);
-          setViewMode('view');
-          setSuccessMsg('Recipe saved successfully!');
-      } catch (err: any) {
-          setError(err.message || 'Failed to save recipe');
-      } finally {
-          setIsLoading(false);
-      }
+      dispatch({ type: 'SAVE_SUCCESS', payload: savedRecipe });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save recipe';
+      dispatch({ type: 'SAVE_ERROR', payload: message });
+    }
   };
 
   const handleBackToSearch = () => {
-      setViewMode('search');
-      setCurrentRecipe(null);
-      setError(null);
-      setSuccessMsg(null);
+    dispatch({ type: 'RESET' });
+  };
+
+  const handleEdit = () => {
+    dispatch({ type: 'EDIT_RECIPE' });
   };
 
   return (
@@ -109,8 +95,8 @@ export default function AddRecipePage() {
       </Navbar>
 
       <Container className="pb-5">
-        {error && <Alert variant="danger" onClose={() => setError(null)} dismissible>{error}</Alert>}
-        {successMsg && <Alert variant="success" onClose={() => setSuccessMsg(null)} dismissible>{successMsg}</Alert>}
+        {error && <Alert variant="danger" onClose={() => dispatch({ type: 'RESET' })} dismissible>{error}</Alert>}
+        {successMsg && <Alert variant="success" onClose={() => dispatch({ type: 'RESET' })} dismissible>{successMsg}</Alert>}
 
         {viewMode === 'search' && (
             <>
@@ -146,7 +132,7 @@ export default function AddRecipePage() {
                     <Button variant="outline-secondary" onClick={handleBackToSearch}>&larr; Back to Search</Button>
                     <div className="d-flex gap-2">
                         <Button variant="secondary" onClick={() => router.push('/')}>Go to Dashboard</Button>
-                        <Button variant="primary" onClick={() => setViewMode('edit')}>Edit</Button>
+                        <Button variant="primary" onClick={handleEdit}>Edit</Button>
                     </div>
                 </div>
                 <RecipeView recipe={currentRecipe as Recipe} />

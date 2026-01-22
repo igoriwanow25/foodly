@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test:integration": "tsx tests/integration/db_and_image.test.ts",
+    "test:e2e": "tsx tests/e2e/scraper_full.test.ts",
+    "test": "npm run test:integration && npm run test:e2e",
+    "depcheck": "depcheck",
+    "test:unit": "jest"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.3.0",
@@ -15,8 +20,8 @@
     "axios": "^1.13.2",
     "better-sqlite3": "^12.6.2",
     "bootstrap": "^5.3.8",
-    "bootstrap-icons": "^1.13.1",
     "cheerio": "^1.1.2",
+    "dotenv": "^17.2.3",
     "he": "^1.2.0",
     "next": "16.1.4",
     "react": "19.2.3",
@@ -24,17 +29,25 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/better-sqlite3": "^7.6.13",
+    "@babel/preset-env": "^7.28.6",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/he": "^1.2.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
-    "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
-    "prisma": "^7.3.0",
-    "tailwindcss": "^4",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0",
+    "nock": "^14.0.10",
+    "prisma": "^6.19.2",
+    "ts-jest": "^29.4.6",
+    "ts-jest-resolver": "^2.0.1",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

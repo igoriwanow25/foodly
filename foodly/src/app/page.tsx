@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Container, Navbar, Row, Col, Form, Button, Badge, Spinner } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import { RecipeCard } from '../components/RecipeCard';
-import { Recipe } from '../core/types';
+import { Recipe } from '../lib/types';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function Dashboard() {
     const tags = new Set<string>();
     recipes.forEach(r => {
         if (r.tags) {
-            r.tags.forEach((t: any) => tags.add(typeof t === 'string' ? t : t.name));
+            r.tags.forEach(t => tags.add(t.name));
         }
     });
     return Array.from(tags).sort();
@@ -60,20 +60,20 @@ export default function Dashboard() {
         result = result.filter(r => 
             r.title.toLowerCase().includes(lowerTerm) || 
             (r.description && r.description.toLowerCase().includes(lowerTerm)) ||
-            r.ingredients.some(i => i.toLowerCase().includes(lowerTerm))
+            (Array.isArray(r.ingredients) && r.ingredients.some(i => i.toLowerCase().includes(lowerTerm)))
         );
     }
 
     // Tag Filter (AND logic)
     if (selectedTags.length > 0) {
         result = result.filter(r => {
-            const recipeTags = r.tags ? r.tags.map((t: any) => typeof t === 'string' ? t : t.name) : [];
+            const recipeTags = r.tags ? r.tags.map(t => t.name) : [];
             return selectedTags.every(tag => recipeTags.includes(tag));
         });
     }
 
     // Sort
-    result.sort((a: any, b: any) => {
+    result.sort((a: Recipe, b: Recipe) => {
         const dateA = new Date(a.createdAt || 0).getTime();
         const dateB = new Date(b.createdAt || 0).getTime();
         return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
@@ -106,7 +106,7 @@ export default function Dashboard() {
                 <Form.Label>Sort By</Form.Label>
                 <Form.Select 
                     value={sortOrder} 
-                    onChange={(e: any) => setSortOrder(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortOrder(e.target.value as 'newest' | 'oldest')}
                 >
                     <option value="newest">Newest Added</option>
                     <option value="oldest">Oldest Added</option>
@@ -145,7 +145,7 @@ export default function Dashboard() {
             </div>
         ) : (
             <Row xs={1} md={2} lg={3} className="g-4">
-                {filteredRecipes.map((recipe: any) => (
+                {filteredRecipes.map((recipe: Recipe) => (
                     <Col key={recipe.id || Math.random()}>
                         <RecipeCard 
                             recipe={recipe} 

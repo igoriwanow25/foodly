@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ScraperEngine } from '../../../core/ScraperEngine';
+import { ScraperEngine } from '@/lib/scraping/ScraperEngine';
 
 // Prevent caching for this API route
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     try {
         new URL(url);
-    } catch (e) {
+    } catch {
         return NextResponse.json(
             { error: 'Invalid URL format' },
             { status: 400 }
@@ -37,15 +37,21 @@ export async function POST(request: Request) {
 
     return NextResponse.json(recipe, { status: 200 });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('API Error:', error);
     
     // Check if it's an Axios error (e.g., 403, 404)
-    if (error.response) {
-        return NextResponse.json(
-            { error: `External server returned error: ${error.response.status}` },
-            { status: error.response.status }
-        );
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'response' in error &&
+      error.response
+    ) {
+      const response = error.response as { status: number };
+      return NextResponse.json(
+        { error: `External server returned error: ${response.status}` },
+        { status: response.status }
+      );
     }
 
     return NextResponse.json(

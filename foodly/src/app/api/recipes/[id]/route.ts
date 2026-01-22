@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ImageDownloader } from '@/core/utils/ImageDownloader';
+import { ImageDownloader } from '@/lib/scraping/utils/ImageDownloader';
 
 export async function GET(
   request: Request,
@@ -24,7 +24,7 @@ export async function GET(
       ingredients: JSON.parse(recipe.ingredients),
       instructions: JSON.parse(recipe.instructions),
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -109,7 +109,7 @@ export async function DELETE(
       where: { id },
     });
     return NextResponse.json({ success: true });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to delete recipe' }, { status: 500 });
   }
 }
