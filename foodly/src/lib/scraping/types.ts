@@ -1,0 +1,1 @@
+export type { ScrapedRecipe as Recipe } from '../types';

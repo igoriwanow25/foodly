@@ -2,34 +2,37 @@
 
 import React, { useState } from 'react';
 import { Form, Button, Row, Col, Card, InputGroup } from 'react-bootstrap';
-import { Recipe } from '../core/types';
+import { Recipe, parseRecipe } from '../lib/types';
+import { Tag } from '@prisma/client';
+import Image from 'next/image';
 
 interface RecipeEditorProps {
-  initialData?: Partial<Recipe>;
-  onSave: (data: any) => void;
+  initialData?: Partial<Recipe & { tags: Tag[] }>;
+  onSave: (data: Partial<Recipe>) => void;
   onCancel: () => void;
   isSaving: boolean;
 }
 
 export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave, onCancel, isSaving }) => {
+  const parsedInitialData = initialData ? parseRecipe(initialData as Recipe) : null;
   // Helper to process initial tags into string
   const getInitialTags = () => {
-      if (!initialData?.tags) return '';
-      return initialData.tags.map((t: any) => typeof t === 'string' ? t : t.name).join(', ');
+      if (!parsedInitialData?.tags) return '';
+      return parsedInitialData.tags.map(t => t.name).join(', ');
   };
 
   const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    description: initialData?.description || '', 
-    image: initialData?.image || '',
-    sourceUrl: initialData?.url || '',
-    prepTime: initialData?.prepTime || 0,
-    servings: initialData?.servings || 0,
+    title: parsedInitialData?.title || '',
+    description: parsedInitialData?.description || '', 
+    image: parsedInitialData?.imagePath || '',
+    sourceUrl: parsedInitialData?.sourceUrl || '',
+    prepTime: parsedInitialData?.prepTime || 0,
+    servings: parsedInitialData?.servings || 0,
     tags: getInitialTags(), 
   });
 
-  const [ingredients, setIngredients] = useState<string[]>(initialData?.ingredients || []);
-  const [instructions, setInstructions] = useState<string[]>(initialData?.instructions || []);
+  const [ingredients, setIngredients] = useState<string[]>(parsedInitialData?.ingredients || []);
+  const [instructions, setInstructions] = useState<string[]>(parsedInitialData?.instructions || []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -60,11 +63,11 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
     e.preventDefault();
     const finalData = {
       ...formData,
-      ingredients: ingredients.filter(i => i.trim() !== ''),
-      instructions: instructions.filter(i => i.trim() !== ''),
-      tags: formData.tags.split(',').map(t => t.trim()).filter(t => t !== ''),
+      ingredients: JSON.stringify(ingredients.filter(i => i.trim() !== '')),
+      instructions: JSON.stringify(instructions.filter(i => i.trim() !== '')),
+      tags: formData.tags.split(',').map(t => ({ name: t.trim(), color: '#e0e0e0', id: '' })).filter(t => t.name !== ''),
     };
-    onSave(finalData);
+    onSave(finalData as Partial<Recipe>);
   };
 
   return (
@@ -103,7 +106,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
                {/* Image Preview */}
                {formData.image && (
                    <div className="mb-2 text-center" style={{ maxHeight: '150px', overflow: 'hidden', borderRadius: '4px' }}>
-                       <img src={formData.image} alt="Preview" style={{ width: '100%', objectFit: 'cover' }} />
+                       <Image src={formData.image} alt="Preview" width={300} height={150} style={{ width: '100%', objectFit: 'cover' }} />
                    </div>
                )}
                <Form.Group className="mb-3">

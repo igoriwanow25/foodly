@@ -1,6 +1,7 @@
+import { Recipe } from '@prisma/client';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ImageDownloader } from '@/core/utils/ImageDownloader';
+import { ImageDownloader } from '@/lib/scraping/utils/ImageDownloader';
 
 export async function GET(request: Request) {
   try {
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const parsedRecipes = recipes.map((recipe: any) => ({
+    const parsedRecipes = recipes.map((recipe: Recipe) => ({
       ...recipe,
       ingredients: JSON.parse(recipe.ingredients),
       instructions: JSON.parse(recipe.instructions),

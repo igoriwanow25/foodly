@@ -5,7 +5,7 @@ import { Container, Navbar, Button, Spinner, Alert } from 'react-bootstrap';
 import { useRouter, useParams } from 'next/navigation'; // useParams for client component
 import { RecipeView } from '../../../components/RecipeView';
 import { RecipeEditor } from '../../../components/RecipeEditor';
-import { Recipe } from '../../../core/types';
+import { Recipe } from '../../../lib/types';
 
 export default function RecipeDetailPage() {
   const router = useRouter();
@@ -27,14 +27,15 @@ export default function RecipeDetailPage() {
       if (!res.ok) throw new Error('Failed to fetch recipe');
       const data = await res.json();
       setRecipe(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleUpdate = async (updatedData: any) => {
+  const handleUpdate = async (updatedData: Partial<Recipe>) => {
       // Optimistic update or wait for server? Wait for server.
       try {
           const res = await fetch(`/api/recipes/${id}`, {
@@ -47,8 +48,9 @@ export default function RecipeDetailPage() {
           const newData = await res.json();
           setRecipe(newData);
           setIsEditing(false);
-      } catch (err: any) {
-          alert('Failed to update: ' + err.message);
+      } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          alert('Failed to update: ' + message);
       }
   };
 
@@ -59,8 +61,9 @@ export default function RecipeDetailPage() {
           const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
           if (!res.ok) throw new Error('Failed to delete');
           router.push('/');
-      } catch (err: any) {
-          alert('Error deleting: ' + err.message);
+      } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          alert('Error deleting: ' + message);
       }
   };
 

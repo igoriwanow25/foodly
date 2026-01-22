@@ -1,5 +1,5 @@
 import http from 'http';
-import { ScraperEngine } from '../../src/core/ScraperEngine';
+import { ScraperEngine } from '../../src/lib/scraping/ScraperEngine';
 
 const PORT = 3456;
 const BASE_URL = `http://localhost:${PORT}`;
@@ -55,8 +55,9 @@ async function runTests() {
         if (recipe.ingredients.length !== 2) throw new Error("Ingredients length mismatch");
         console.log("PASS");
 
-    } catch (e: any) {
-        console.error(`FAIL: ${e.message}`);
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'An unknown error occurred';
+        console.error(`FAIL: ${message}`);
         failed = true;
     } finally {
         server.close();

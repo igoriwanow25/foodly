@@ -1,5 +1,5 @@
-import { JsonLdStrategy } from '../../src/core/strategies/JsonLdStrategy';
-import { HtmlFallbackStrategy } from '../../src/core/strategies/HtmlFallbackStrategy';
+import { JsonLdStrategy } from '../../src/lib/scraping/strategies/JsonLdStrategy';
+import { HtmlFallbackStrategy } from '../../src/lib/scraping/strategies/HtmlFallbackStrategy';
 
 const jsonLdStrategy = new JsonLdStrategy();
 const fallbackStrategy = new HtmlFallbackStrategy();
@@ -141,8 +141,9 @@ async function runTests() {
         try {
             validateResult(result, test.expected);
             console.log("PASS");
-        } catch (e: any) {
-            console.error(`FAIL: ${e.message}`);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'An unknown error occurred';
+            console.error(`FAIL: ${message}`);
             failed = true;
         }
     }
@@ -155,8 +156,9 @@ async function runTests() {
         try {
              validateResult(result, test.expected);
              console.log("PASS");
-        } catch (e: any) {
-            console.error(`FAIL: ${e.message}`);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'An unknown error occurred';
+            console.error(`FAIL: ${message}`);
             failed = true;
         }
     }
@@ -169,7 +171,9 @@ async function runTests() {
     }
 }
 
-function validateResult(result: any, expected: any) {
+import { Recipe } from '../../src/lib/scraping/types';
+// ...
+function validateResult(result: Partial<Recipe> | null, expected: Partial<Recipe>) {
     if (!result) throw new Error("Result is null");
     if (result.title !== expected.title) throw new Error(`Title mismatch: expected '${expected.title}', got '${result.title}'`);
     
