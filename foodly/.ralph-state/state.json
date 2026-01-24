@@ -1,18 +1,17 @@
 {
-  "id": "loop-20260124-recipe-view-tags",
-  "status": "complete",
-  "goal": "a dodaj też widok dodawania tagów na karcie przepisu. Rozbij zmiany na kroki, testuj każdy krok i nie wracaj dopóki nie będziesz miał 100% pewności że kod działa bez żadnego zarzutu",
-  "iteration": 4,
+  "id": "loop-1737768000000",
+  "status": "completed",
+  "goal": "wyczyść wyniki testów",
+  "iteration": 2,
   "maxIterations": 100,
   "completionPromise": "COMPLETE",
-  "startTime": "2026-01-24T11:00:00.000Z",
-  "lastUpdate": "2026-01-24T11:30:00.000Z",
+  "startTime": "2026-01-24T01:30:00.000Z",
+  "lastUpdate": "2026-01-24T01:45:00.000Z",
   "notes": [
     "Loop started",
-    "Analyzed RecipeView and identified missing tag functionality.",
-    "Updated RecipeView to display tags and include an 'Add Tag' button opening a Modal.",
-    "Updated RecipeDetailPage to pass an onUpdate callback.",
-    "Added unit tests for RecipeView tag interaction.",
-    "Verified all tests passed."
+    "Created unit test tests/unit/FacebookStrategy.test.ts to persist logic verification",
+    "Removed e2e tests tests/e2e/facebook.test.ts and tests/e2e/english_recipes_bulk.test.ts",
+    "Removed heavy fixtures tests/fixtures/facebook and tests/fixtures/english_recipes",
+    "Removed temporary scripts"
   ]
 }

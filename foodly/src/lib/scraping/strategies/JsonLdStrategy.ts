@@ -129,7 +129,7 @@ export class JsonLdStrategy {
         .filter(s => s.length > 0);
     
     // Special check for garbage instructions (e.g. tools list instead of steps)
-    if (instructions.length === 1 && /^PRZYGOTUJ/i.test(instructions[0])) {
+    if (instructions.length === 1 && /^(PRZYGOTUJ|PREPARATION|INSTRUCTIONS|METHOD|DIRECTIONS)/i.test(instructions[0])) {
         // Discard it so fallback can try
         instructions = [];
     }

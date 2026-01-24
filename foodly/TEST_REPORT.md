@@ -1,6 +1,6 @@
 # Foodly Scraper Test Report
 
-Date: 24.01.2026, 11:52:16
+Date: 24.01.2026, 12:19:40
 
 ### URL: https://aniagotuje.pl/przepis/lasagne-ze-szpinakiem
 - **Status**: ✅ PASSED
@@ -12,9 +12,9 @@ Date: 24.01.2026, 11:52:16
 ### URL: https://www.kwestiasmaku.com/przepis/chakalaka-z-kurczakiem-i-kasza-peczak
 - **Status**: ✅ PASSED
 - **Title**: Kaszotto chakalaka z kurczakiem
-- **Ingredients**: 14 found
-- **Instructions**: 2 found
-- **First Instruction**: "Kaszotto chakalaka z kurczakiem"...
+- **Ingredients**: 17 found
+- **Instructions**: 6 found
+- **First Instruction**: "W garnku z grubym dnem lub na głębokiej patelni, na oliwie, zeszklić pokrojoną w kosteczkę cebulę i "...
 
 ### URL: https://www.przepisy.pl/przepis/roladki-z-miesem-mielonym-i-cukinia
 - **Status**: ✅ PASSED
