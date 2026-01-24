@@ -3,15 +3,18 @@ import axios from 'axios';
 import { Recipe } from './types';
 import { JsonLdStrategy } from './strategies/JsonLdStrategy';
 import { HtmlFallbackStrategy } from './strategies/HtmlFallbackStrategy';
+import { FacebookStrategy } from './strategies/FacebookStrategy';
 
 export class ScraperEngine {
   private jsonLdStrategy: JsonLdStrategy;
   private htmlFallbackStrategy: HtmlFallbackStrategy;
+  private facebookStrategy: FacebookStrategy;
   private userAgent: string;
 
   constructor() {
     this.jsonLdStrategy = new JsonLdStrategy();
     this.htmlFallbackStrategy = new HtmlFallbackStrategy();
+    this.facebookStrategy = new FacebookStrategy();
     this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   }
 
@@ -39,6 +42,15 @@ export class ScraperEngine {
       if (url.includes('jadlonomia.com')) {
           fs.writeFileSync('debug_full.html', html);
           console.log('[DEBUG] Saved debug_full.html');
+      }
+
+      // 0. Facebook Strategy (Specific)
+      if (url.includes('facebook.com') || url.includes('fb.watch')) {
+          console.log(`[Scraper] Using FacebookStrategy for ${url}`);
+          const fbResult = this.facebookStrategy.extract(html, url);
+          if (fbResult && fbResult.ingredients.length > 0) {
+              return fbResult;
+          }
       }
 
       // 1. Try JSON-LD

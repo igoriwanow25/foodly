@@ -11,7 +11,7 @@ export class HtmlFallbackStrategy {
     
     // Remove everything after "Komentarze" header
     $('h2, h3, h4, h5').each((_, el) => {
-        if (/komentarze|comments|opinie/i.test($(el).text())) {
+        if (/komentarze|comments|opinie|reviews/i.test($(el).text())) {
             $(el).nextAll().remove();
             $(el).remove();
         }
@@ -51,7 +51,7 @@ export class HtmlFallbackStrategy {
     for (const candidate of candidates) {
         candidate.scoreIng = this.calculateIngredientScore(candidate.items);
         candidate.scoreInst = this.calculateInstructionScore(candidate.items);
-
+        
         // Penalize instruction score if it looks like ingredients
         if (candidate.scoreIng > 3) {
             candidate.scoreInst -= 10;
@@ -77,14 +77,14 @@ export class HtmlFallbackStrategy {
         if (candidate.element.parents('.ingredients, .skladniki').length > 0) candidate.scoreIng += 5; // Keep exact match boost too
         
         // Instructions Boost
-        if (/przygotowanie|instructions|steps|sposob/i.test(combinedAttr)) candidate.scoreInst += 10;
-        if (/przygotowanie|instructions|steps|sposob/i.test(parentAttr)) candidate.scoreInst += 10;
-        if (candidate.element.parents('.instructions, .przygotowanie, .steps').length > 0) candidate.scoreInst += 5;
+        if (/przygotowanie|instructions|steps|sposob|directions|method/i.test(combinedAttr)) candidate.scoreInst += 10;
+        if (/przygotowanie|instructions|steps|sposob|directions|method/i.test(parentAttr)) candidate.scoreInst += 10;
+        if (candidate.element.parents('.instructions, .przygotowanie, .steps, .directions').length > 0) candidate.scoreInst += 5;
 
         // Header check (look at previous sibling)
         const prevHeader = candidate.element.prevAll('h2, h3, h4, strong, p, div').first().text().toLowerCase();
-        if (/składniki|potrzebujesz|zakupy/i.test(prevHeader)) candidate.scoreIng += 5;
-        if (/przygotowanie|wykonanie|robimy|przepis|instrukc/i.test(prevHeader)) candidate.scoreInst += 5;
+        if (/składniki|potrzebujesz|zakupy|ingredients|shopping list/i.test(prevHeader)) candidate.scoreIng += 5;
+        if (/przygotowanie|wykonanie|robimy|przepis|instrukc|method|directions|steps/i.test(prevHeader)) candidate.scoreInst += 5;
     }
 
     // Selection
@@ -184,6 +184,9 @@ export class HtmlFallbackStrategy {
   private extractParagraphIngredients($: cheerio.CheerioAPI, $root: cheerio.Cheerio<any>): string[] {
       const items: string[] = [];
       const unitRegex = /^(\d+|[½⅓¼¾])\s*([a-zA-Złóż]+)?/i; // Starts with number/fraction
+      // Allow units appearing later: "Product - 100g"
+      const embeddedUnitRegex = /(\d+|[½⅓¼¾])\s*(g|kg|ml|l|dag|szklank|łyż|szt|cup|tbsp|tsp|oz|lb)/i;
+      const commonIngredientsRegex = /^(sól|pieprz|cukier|olej|mąka|cebula|czosnek|jajk|mleko|\b(salt|pepper|sugar|oil|flour|butter|egg|eggs|milk|water|onion|garlic)\b)/i;
       
       $root.find('p, div').each((_, el) => {
           if ($(el).closest('.comments, #comments, #Comments, .meta, .comment-body').length > 0) return;
@@ -193,9 +196,12 @@ export class HtmlFallbackStrategy {
           if (text.length < 3 || text.length > 150) return;
 
           // Check if looks like ingredient
-          if (unitRegex.test(text) || /^(sól|pieprz|cukier|olej|mąka)/i.test(text)) {
+          if (unitRegex.test(text) || commonIngredientsRegex.test(text) || embeddedUnitRegex.test(text)) {
+               // Exclude explicit numbered steps (e.g. "1. Do something")
+               if (/^\d+\./.test(text)) return;
+
                // Must not look like instruction (verb check)
-               const verbRegex = /gotuj|smaż|piecz|mieszaj/i;
+               const verbRegex = /gotuj|smaż|piecz|mieszaj|\b(cook|bake|fry|mix|stir|boil|roast)\b/i;
                if (!verbRegex.test(text)) {
                    items.push(text);
                }
@@ -212,7 +218,7 @@ export class HtmlFallbackStrategy {
 
           const text = $(el).text().trim();
           if (text.length < 15 || text.length > 1000) return;
-          if (/^(\d{1,2}\.\s|Krok \d|Etap \d)/i.test(text)) {
+          if (/^(\d{1,2}\.\s|Krok \d|Etap \d|Step \d)/i.test(text)) {
               items.push(text);
               return;
           }
@@ -235,7 +241,12 @@ export class HtmlFallbackStrategy {
               "wyjmuj", "wyjmow", "wyją",
               "zeszkl", 
               "obrac", "obróć", "układ", "ułóż",
-              "rozpuszcz", "rozpuś"
+              "rozpuszcz", "rozpuś",
+              // English verbs
+              "cook", "bake", "fry", "boil", "roast", "heat", "preheat", "simmer", "sauté", "stir", "whisk", "mix", "blend", 
+              "chop", "slice", "dice", "mince", "peel", "grate", "crush", "squeeze", "pour", "add", "combine", "serve", "garnish", 
+              "sprinkle", "drain", "rinse", "wash", "dry", "season", "taste", "arrange", "place", "put", "remove", "set", "cover", 
+              "let", "rest", "cool", "refrigerate", "freeze", "melt", "dissolve", "knead", "roll", "cut", "turn", "flip"
           ];
           const verbRegex = new RegExp(`\\b(${verbs.join('|')})`, 'i');
           
@@ -245,9 +256,9 @@ export class HtmlFallbackStrategy {
               const startsWithVerb = verbRegex.test(text.substring(0, 20)); 
               const verbCount = (text.match(new RegExp(verbRegex, 'gi')) || []).length;
               
-              if ((startsWithVerb && words > 3) || verbCount > 1 || words > 15) {
-                   if (!/^(to jest|jest to|moje|nasze|ten przepis)/i.test(text)) {
-                       if (!/\b(spróbuj|polecam|zapraszam)\b/i.test(text)) {
+              if ((startsWithVerb && words >= 2) || verbCount > 1 || words > 15) {
+                   if (!/^(to jest|jest to|moje|nasze|ten przepis|this is|my recipe)/i.test(text)) {
+                       if (!/\b(spróbuj|polecam|zapraszam|recommend|enjoy)\b/i.test(text)) {
                             items.push(text);
                        }
                    }
@@ -259,21 +270,52 @@ export class HtmlFallbackStrategy {
 
   private calculateIngredientScore(items: string[]): number {
       let score = 0;
-      const unitRegex = /^[0-9]| [0-9]|g\b|kg\b|ml\b|l\b|dag\b|szklank|łyż|sztuk|opakowan/i;
-      const ingredientCommonRegex = /sól|cukier|olej|woda|pieprz|mąka|cebula|czosnek|jajk|mleko/i;
+      const unitRegex = /^[0-9]| [0-9]|g\b|kg\b|ml\b|l\b|dag\b|szklank|łyż|sztuk|opakowan|\b(cup|cups|tbsp|tsp|oz|lb|pound|pounds|tablespoon|teaspoon|tablespoons|teaspoons|pinch|clove|cloves|can|cans|package|packages|bunch|head|stick|sticks)\b/i;
+      const ingredientCommonRegex = /sól|cukier|olej|woda|pieprz|mąka|cebula|czosnek|jajk|mleko|\b(salt|pepper|sugar|oil|flour|butter|egg|eggs|milk|water|onion|onions|garlic)\b/i;
       
+      const verbs = [
+          "gotuj", "gotow", "zagotuj", "smaż", "podsmaż", "piecz", "upiecz", "duś", "udus", "blansz", "grill", "wędz", "pasteryz", "praż",
+          "krój", "kroi", "pokrój", "siek", "posiek", "trzyj", "trze", "zetrzyj", "miel", "zmiel", "tłucz", "utłucz",
+          "obier", "obra", "myj", "umy", "płucz", "opłucz", "susz", "osus",
+          "rozdrabn", "rozdrobn", "gnieć", "zgnieć", "rozgniat", "rozgnieć", "przecisk", "przeciś",
+          "przepuszcz", "przepuś",
+          "miesz", "wymiesz", "miks", "zmiks", "blend", "zblend", "ucier", "utrzyj", "ubij",
+          "zagniat", "zagnie", "wyrabi", "wyrób", "wałk", "rozwałk", "lep", "zlep", "klej", "sklej", "wykraw", "wykrój", "form", "uform",
+          "łącz", "połącz", "dodaw", "doda", "wsyp", "wlew", "wla", "dolew", "dola",
+          "ugniata", "ugnie",
+          "dopraw", "sól", "posól", "pieprz", "popieprz", "słodź", "posłodź",
+          "dekor", "udekor", "posyp", "polew", "pola", "nakład", "nałóż", "podaw", "poda",
+          "wykład", "wyłóż", "przekład", "przełóż", "odcedz", "odcedź", "odlew", "odla", "studź", "ostudź", "wystudź",
+          "nadziew", "nadziej",
+          "wyjmuj", "wyjmow", "wyją",
+          "zeszkl", 
+          "obrac", "obróć", "układ", "ułóż",
+          "rozpuszcz", "rozpuś",
+          // English verbs
+          "cook", "bake", "fry", "boil", "roast", "heat", "preheat", "simmer", "sauté", "stir", "whisk", "mix", "blend", 
+          "chop", "slice", "dice", "mince", "peel", "grate", "crush", "squeeze", "pour", "add", "combine", "serve", "garnish", 
+          "sprinkle", "drain", "rinse", "wash", "dry", "season", "taste", "arrange", "place", "put", "remove", "set", "cover", 
+          "let", "rest", "cool", "refrigerate", "freeze", "melt", "dissolve", "knead", "roll", "cut", "turn", "flip"
+      ];
+      const verbRegex = new RegExp(`\\b(${verbs.join('|')})`, 'i');
+
       let unitMatches = 0;
       let commonMatches = 0;
+      let verbMatches = 0;
 
       for (const item of items) {
           if (unitRegex.test(item)) unitMatches++;
           if (ingredientCommonRegex.test(item)) commonMatches++;
+          if (verbRegex.test(item)) verbMatches++;
           if (item.length > 150) score -= 2; 
       }
 
       const ratio = items.length > 0 ? (unitMatches + commonMatches) / items.length : 0;
       if (ratio > 0.5) score += 5;
       score += unitMatches * 0.5;
+      
+      // Penalize if verbs found
+      if (verbMatches > 0) score -= verbMatches * 2;
 
       return score;
   }
@@ -297,10 +339,15 @@ export class HtmlFallbackStrategy {
           "wyjmuj", "wyjmow", "wyją",
           "zeszkl", 
           "obrac", "obróć", "układ", "ułóż",
-          "rozpuszcz", "rozpuś"
+          "rozpuszcz", "rozpuś",
+          // English verbs
+          "cook", "bake", "fry", "boil", "roast", "heat", "preheat", "simmer", "sauté", "stir", "whisk", "mix", "blend", 
+          "chop", "slice", "dice", "mince", "peel", "grate", "crush", "squeeze", "pour", "add", "combine", "serve", "garnish", 
+          "sprinkle", "drain", "rinse", "wash", "dry", "season", "taste", "arrange", "place", "put", "remove", "set", "cover", 
+          "let", "rest", "cool", "refrigerate", "freeze", "melt", "dissolve", "knead", "roll", "cut", "turn", "flip"
       ];
       const verbRegex = new RegExp(`\\b(${verbs.join('|')})`, 'i');
-      const badStartRegex = /^(\d+ g|\d+ kg|\d+ ml|składniki|products|ingredients)/i;
+      const badStartRegex = /^(\d+ g|\d+ kg|\d+ ml|\d+ cup|\d+ tbsp|\d+ tsp|\d+ oz|\d+ lb|składniki|products|ingredients)/i;
 
       let verbMatches = 0;
       let badStarts = 0;
@@ -332,10 +379,10 @@ export class HtmlFallbackStrategy {
         .filter(s => {
             if (s.length < 3) return false;
             const lower = s.toLowerCase();
-            if (/^(składniki|przygotowanie|reklama|social|facebook|instagram|udostępnij)/i.test(lower)) return false;
+            if (/^(składniki|przygotowanie|reklama|social|facebook|instagram|udostępnij|ingredients|directions|advertisement|share|follow)/i.test(lower)) return false;
             
             if (type === 'instructions') {
-                if (/czas przygotowania|stopień trudności|kalorie|autor:|data publikacji/i.test(lower)) return false;
+                if (/czas przygotowania|stopień trudności|kalorie|autor:|data publikacji|prep time|cook time|total time|servings|difficulty|calories|author:|published:|comments|reply/i.test(lower)) return false;
                 if (/^http/i.test(lower)) return false;
                 if (/komentarz|odpowiedz/i.test(lower)) return false;
             }
