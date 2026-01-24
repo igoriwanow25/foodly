@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Layout, Input, Select, Button, Tag, Spin, Row, Col, Typography, Empty, Space, theme } from 'antd';
+import { Layout, Input, Select, Button, Spin, Row, Col, Typography, Empty, theme } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { RecipeCard } from '../components/RecipeCard';
@@ -50,15 +50,8 @@ export default function Dashboard() {
             r.tags.forEach(t => tags.add(t.name));
         }
     });
-    return Array.from(tags).sort();
+    return Array.from(tags).sort().map(t => ({ label: t, value: t }));
   }, [recipes]);
-
-  const toggleTag = (tag: string, checked: boolean) => {
-    const nextSelectedTags = checked
-      ? [...selectedTags, tag]
-      : selectedTags.filter((t) => t !== tag);
-    setSelectedTags(nextSelectedTags);
-  };
 
   const filteredRecipes = useMemo(() => {
     let result = [...recipes];
@@ -109,7 +102,7 @@ export default function Dashboard() {
           }}
         >
           <Row gutter={[16, 16]} style={{ marginBottom: 24 }} align="bottom">
-            <Col xs={24} md={16}>
+            <Col xs={24} md={10}>
                 <div style={{ marginBottom: 8 }}><Text strong>Search</Text></div>
                 <Search
                     placeholder="Search titles, ingredients..."
@@ -119,6 +112,20 @@ export default function Dashboard() {
                 />
             </Col>
             <Col xs={24} md={8}>
+                <div style={{ marginBottom: 8 }}><Text strong>Filter by Tags</Text></div>
+                <Select
+                    mode="multiple"
+                    allowClear
+                    style={{ width: '100%' }}
+                    placeholder="Select tags..."
+                    size="large"
+                    options={allTags}
+                    value={selectedTags}
+                    onChange={setSelectedTags}
+                    maxTagCount="responsive"
+                />
+            </Col>
+            <Col xs={24} md={6}>
                 <div style={{ marginBottom: 8 }}><Text strong>Sort By</Text></div>
                 <Select
                     defaultValue="newest"
@@ -132,28 +139,6 @@ export default function Dashboard() {
             </Col>
           </Row>
 
-          {allTags.length > 0 && (
-             <div style={{ marginBottom: 24 }}>
-                <Text type="secondary" style={{ display: 'block', marginBottom: 8, textTransform: 'uppercase', fontSize: '12px', fontWeight: 'bold' }}>Filter by Tags:</Text>
-                <Space wrap size={[0, 8]}>
-                    {allTags.map(tag => (
-                        <Tag.CheckableTag
-                            key={tag}
-                            checked={selectedTags.includes(tag)}
-                            onChange={(checked) => toggleTag(tag, checked)}
-                        >
-                            {tag}
-                        </Tag.CheckableTag>
-                    ))}
-                    {selectedTags.length > 0 && (
-                        <Button type="link" size="small" onClick={() => setSelectedTags([])}>
-                            Clear
-                        </Button>
-                    )}
-                </Space>
-             </div>
-          )}
-
           {isLoading ? (
              <div style={{ textAlign: 'center', padding: '50px 0' }}>
                  <Spin size="large" />
@@ -166,6 +151,7 @@ export default function Dashboard() {
                             <RecipeCard 
                                 recipe={recipe} 
                                 onClick={() => router.push(`/recipes/${recipe.id}`)} 
+                                onUpdate={fetchRecipes}
                             />
                         </Col>
                     ))}

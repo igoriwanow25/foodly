@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Form, Button, Input, InputNumber, Card, Row, Col, Space, Typography, Image } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Form, Button, Input, InputNumber, Card, Row, Col, Space, Typography, Image, Select } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { Recipe, parseRecipe } from '../lib/types';
 import { Tag } from '@prisma/client';
@@ -19,9 +19,9 @@ interface RecipeEditorProps {
 export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave, onCancel, isSaving }) => {
   const parsedInitialData = initialData ? parseRecipe(initialData as Recipe) : null;
   
-  const getInitialTags = () => {
-      if (!parsedInitialData?.tags) return '';
-      return parsedInitialData.tags.map(t => t.name).join(', ');
+  const getInitialTags = (): string[] => {
+      if (!parsedInitialData?.tags) return [];
+      return parsedInitialData.tags.map(t => t.name);
   };
 
   const [formData, setFormData] = useState({
@@ -36,6 +36,22 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
 
   const [ingredients, setIngredients] = useState<string[]>(parsedInitialData?.ingredients || []);
   const [instructions, setInstructions] = useState<string[]>(parsedInitialData?.instructions || []);
+  const [availableTags, setAvailableTags] = useState<{ label: string, value: string }[]>([]);
+
+  useEffect(() => {
+    const fetchTags = async () => {
+      try {
+        const res = await fetch('/api/tags');
+        if (res.ok) {
+          const tags: Tag[] = await res.json();
+          setAvailableTags(tags.map(t => ({ label: t.name, value: t.name })));
+        }
+      } catch (e) {
+        console.error("Failed to fetch tags", e);
+      }
+    };
+    fetchTags();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -44,6 +60,10 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
 
   const handleNumberChange = (name: string, value: number | null) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleTagsChange = (value: string[]) => {
+      setFormData(prev => ({ ...prev, tags: value }));
   };
 
   // Ingredient Helpers
@@ -71,7 +91,7 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
       ...formData,
       ingredients: JSON.stringify(ingredients.filter(i => i.trim() !== '')),
       instructions: JSON.stringify(instructions.filter(i => i.trim() !== '')),
-      tags: formData.tags.split(',').map(t => ({ name: t.trim(), color: '#e0e0e0', id: '' })).filter(t => t.name !== ''),
+      tags: formData.tags, // Send directly as string array
     };
     onSave(finalData as Partial<Recipe>);
   };
@@ -153,12 +173,15 @@ export const RecipeEditor: React.FC<RecipeEditorProps> = ({ initialData, onSave,
 
           <Row>
              <Col span={24}>
-                <Form.Item label="Tags (comma separated)">
-                  <Input 
-                    name="tags" 
-                    value={formData.tags} 
-                    onChange={handleInputChange} 
-                    placeholder="Dinner, Healthy, Italian"
+                <Form.Item label="Tags">
+                  <Select
+                    mode="tags"
+                    style={{ width: '100%' }}
+                    placeholder="Select or create tags"
+                    onChange={handleTagsChange}
+                    value={formData.tags}
+                    options={availableTags}
+                    tokenSeparators={[',']}
                   />
                 </Form.Item>
              </Col>

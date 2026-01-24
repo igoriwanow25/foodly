@@ -1,6 +1,6 @@
 # Foodly Scraper Test Report
 
-Date: 22.01.2026, 12:29:31
+Date: 24.01.2026, 11:52:16
 
 ### URL: https://aniagotuje.pl/przepis/lasagne-ze-szpinakiem
 - **Status**: ✅ PASSED

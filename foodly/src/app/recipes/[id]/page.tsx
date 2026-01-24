@@ -127,7 +127,7 @@ export default function RecipeDetailPage() {
                         <Button type="primary" icon={<EditOutlined />} onClick={() => setIsEditing(true)}>Edit Recipe</Button>
                     </div>
                 </div>
-                <RecipeView recipe={recipe} />
+                <RecipeView recipe={recipe} onUpdate={() => fetchRecipe(id)} />
             </div>
         )}
       </Content>

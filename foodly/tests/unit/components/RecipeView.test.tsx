@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { RecipeCard } from '../../../src/components/RecipeCard';
+import { RecipeView } from '../../../src/components/RecipeView';
 import { Tag } from '@prisma/client';
 import '@testing-library/jest-dom';
 
@@ -38,7 +38,7 @@ global.fetch = jest.fn(() =>
   })
 ) as jest.Mock;
 
-const mockTag: Tag = { id: '1', name: 'Dinner', color: '#000' } as Tag; // Casting to avoid complex nested types in mock
+const mockTag: Tag = { id: '1', name: 'Dinner', color: '#000' } as Tag;
 
 const mockRecipe: any = {
     id: '123',
@@ -54,37 +54,30 @@ const mockRecipe: any = {
     updatedAt: new Date()
 };
 
-describe('RecipeCard', () => {
+describe('RecipeView', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    it('renders recipe details', () => {
-        const handleClick = jest.fn();
-        render(<RecipeCard recipe={mockRecipe} onClick={handleClick} />);
+    it('renders recipe details and tags', () => {
+        render(<RecipeView recipe={mockRecipe} />);
         
         expect(screen.getByText('Test Recipe')).toBeInTheDocument();
         expect(screen.getByText('Dinner')).toBeInTheDocument(); // Tag
-        expect(screen.getByText(/30 min/)).toBeInTheDocument();
-        
-        // Check for image
-        const img = screen.getByAltText('Test Recipe');
-        expect(img).toHaveAttribute('src', 'http://example.com/img.jpg');
+        expect(screen.getByText('Add Tag')).toBeInTheDocument();
     });
 
-    it('opens tag modal on edit click', async () => {
-        const handleClick = jest.fn();
+    it('opens tag modal on Add Tag click', async () => {
         const handleUpdate = jest.fn();
         
         await act(async () => {
-            render(<RecipeCard recipe={mockRecipe} onClick={handleClick} onUpdate={handleUpdate} />);
+            render(<RecipeView recipe={mockRecipe} onUpdate={handleUpdate} />);
         });
 
-        const editButton = screen.getByLabelText('Edit Tags');
-        expect(editButton).toBeInTheDocument();
+        const addTagButton = screen.getByText('Add Tag');
         
         await act(async () => {
-             fireEvent.click(editButton);
+             fireEvent.click(addTagButton);
         });
         
         // Check if modal title appears
