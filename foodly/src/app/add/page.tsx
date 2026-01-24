@@ -45,7 +45,14 @@ export default function AddRecipePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to fetch recipe');
 
-      dispatch({ type: 'SEARCH_SUCCESS', payload: data });
+      // Map ScrapedRecipe to Recipe (Prisma) structure
+      const mappedData = {
+          ...data,
+          sourceUrl: data.url,
+          imagePath: data.image
+      };
+
+      dispatch({ type: 'SEARCH_SUCCESS', payload: mappedData });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred';
       dispatch({ type: 'SEARCH_ERROR', payload: message });
