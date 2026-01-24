@@ -1,21 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Container, Navbar, Button, Spinner, Alert } from 'react-bootstrap';
-import { useRouter, useParams } from 'next/navigation'; // useParams for client component
+import { Layout, Button, Spin, Alert, Modal, Typography } from 'antd';
+import { ArrowLeftOutlined, EditOutlined, DeleteOutlined, HomeOutlined, ExclamationCircleFilled } from '@ant-design/icons';
+import { useRouter, useParams } from 'next/navigation'; 
 import { RecipeView } from '../../../components/RecipeView';
 import { RecipeEditor } from '../../../components/RecipeEditor';
 import { Recipe } from '../../../lib/types';
 
+const { Header, Content } = Layout;
+const { confirm } = Modal;
+
 export default function RecipeDetailPage() {
   const router = useRouter();
-  const params = useParams(); // { id: string }
+  const params = useParams(); 
   const id = params?.id as string;
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (id) fetchRecipe(id);
@@ -36,7 +41,7 @@ export default function RecipeDetailPage() {
   };
 
   const handleUpdate = async (updatedData: Partial<Recipe>) => {
-      // Optimistic update or wait for server? Wait for server.
+      setIsSaving(true);
       try {
           const res = await fetch(`/api/recipes/${id}`, {
               method: 'PATCH',
@@ -50,58 +55,82 @@ export default function RecipeDetailPage() {
           setIsEditing(false);
       } catch (err: unknown) {
           const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-          alert('Failed to update: ' + message);
+          Modal.error({ title: 'Failed to update', content: message });
+      } finally {
+          setIsSaving(false);
       }
   };
 
-  const handleDelete = async () => {
-      if (!window.confirm('Are you sure you want to delete this recipe?')) return;
-      
-      try {
-          const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
-          if (!res.ok) throw new Error('Failed to delete');
-          router.push('/');
-      } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-          alert('Error deleting: ' + message);
-      }
+  const handleDelete = () => {
+      confirm({
+        title: 'Are you sure delete this recipe?',
+        icon: <ExclamationCircleFilled />,
+        content: 'This action cannot be undone.',
+        okText: 'Yes',
+        okType: 'danger',
+        cancelText: 'No',
+        onOk: async () => {
+            try {
+                const res = await fetch(`/api/recipes/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Failed to delete');
+                router.push('/');
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+                Modal.error({ title: 'Error deleting', content: message });
+            }
+        },
+      });
   };
 
-  if (isLoading) return <Container className="py-5 text-center"><Spinner animation="border" /></Container>;
-  if (error || !recipe) return <Container className="py-5"><Alert variant="danger">{error || 'Recipe not found'}</Alert></Container>;
+  if (isLoading) return (
+      <Layout style={{ minHeight: '100vh', justifyContent: 'center', alignItems: 'center' }}>
+          <Spin size="large" />
+      </Layout>
+  );
+
+  if (error || !recipe) return (
+       <Layout style={{ minHeight: '100vh', padding: 50 }}>
+           <Alert message="Error" description={error || 'Recipe not found'} type="error" showIcon />
+       </Layout>
+  );
 
   return (
-    <>
-      <Navbar bg="dark" variant="dark" className="mb-5">
-        <Container>
-          <Navbar.Brand href="/" style={{cursor: 'pointer'}}>Foodly</Navbar.Brand>
-          <Button variant="outline-light" size="sm" onClick={() => router.push('/')}>Dashboard</Button>
-        </Container>
-      </Navbar>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+        <div 
+          style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold', cursor: 'pointer' }} 
+          onClick={() => router.push('/')}
+        >
+          Foodly
+        </div>
+        <Button ghost icon={<HomeOutlined />} size="small" onClick={() => router.push('/')}>
+           Dashboard
+        </Button>
+      </Header>
 
-      <Container className="pb-5">
+      <Content style={{ padding: '24px 48px' }}>
         {isEditing ? (
-            <div className="mx-auto" style={{ maxWidth: '900px' }}>
+            <div style={{ maxWidth: 900, margin: '0 auto' }}>
                 <RecipeEditor 
                     initialData={recipe} 
                     onSave={handleUpdate} 
                     onCancel={() => setIsEditing(false)}
-                    isSaving={false} // Todo: Add saving state
+                    isSaving={isSaving} 
                 />
             </div>
         ) : (
-            <div className="mx-auto" style={{ maxWidth: '900px' }}>
-                <div className="d-flex justify-content-between mb-3">
-                    <Button variant="outline-secondary" onClick={() => router.push('/')}>&larr; Back</Button>
-                    <div className="d-flex gap-2">
-                        <Button variant="danger" onClick={handleDelete}>Delete</Button>
-                        <Button variant="primary" onClick={() => setIsEditing(true)}>Edit Recipe</Button>
+            <div style={{ maxWidth: 900, margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+                    <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/')}>Back</Button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>Delete</Button>
+                        <Button type="primary" icon={<EditOutlined />} onClick={() => setIsEditing(true)}>Edit Recipe</Button>
                     </div>
                 </div>
                 <RecipeView recipe={recipe} />
             </div>
         )}
-      </Container>
-    </>
+      </Content>
+    </Layout>
   );
 }

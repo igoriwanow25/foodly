@@ -1,10 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Container, Navbar, Row, Col, Form, Button, Badge, Spinner } from 'react-bootstrap';
+import { Layout, Input, Select, Button, Tag, Spin, Row, Col, Typography, Empty, Space, theme } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useRouter } from 'next/navigation';
 import { RecipeCard } from '../components/RecipeCard';
 import { Recipe } from '../lib/types';
+
+const { Header, Content } = Layout;
+const { Text } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
 export default function Dashboard() {
   const router = useRouter();
@@ -13,6 +19,10 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+
+  const {
+    token: { colorBgContainer, borderRadiusLG },
+  } = theme.useToken();
 
   useEffect(() => {
     fetchRecipes();
@@ -43,12 +53,11 @@ export default function Dashboard() {
     return Array.from(tags).sort();
   }, [recipes]);
 
-  const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-        setSelectedTags(selectedTags.filter(t => t !== tag));
-    } else {
-        setSelectedTags([...selectedTags, tag]);
-    }
+  const toggleTag = (tag: string, checked: boolean) => {
+    const nextSelectedTags = checked
+      ? [...selectedTags, tag]
+      : selectedTags.filter((t) => t !== tag);
+    setSelectedTags(nextSelectedTags);
   };
 
   const filteredRecipes = useMemo(() => {
@@ -60,7 +69,7 @@ export default function Dashboard() {
         result = result.filter(r => 
             r.title.toLowerCase().includes(lowerTerm) || 
             (r.description && r.description.toLowerCase().includes(lowerTerm)) ||
-            (Array.isArray(r.ingredients) && r.ingredients.some(i => i.toLowerCase().includes(lowerTerm)))
+            (Array.isArray(r.ingredients) && r.ingredients.some((i: any) => typeof i === 'string' && i.toLowerCase().includes(lowerTerm)))
         );
     }
 
@@ -83,85 +92,91 @@ export default function Dashboard() {
   }, [recipes, searchTerm, selectedTags, sortOrder]);
 
   return (
-    <>
-      <Navbar bg="dark" variant="dark" sticky="top" className="mb-4">
-        <Container>
-          <Navbar.Brand href="#">Foodly Cookbook</Navbar.Brand>
-          <Button variant="success" onClick={() => router.push('/add')}>+ Add Recipe</Button>
-        </Container>
-      </Navbar>
-
-      <Container className="pb-5">
-        <Row className="mb-4 g-3 align-items-end">
-            <Col md={6}>
-                <Form.Label>Search</Form.Label>
-                <Form.Control 
-                    type="text" 
-                    placeholder="Search titles, ingredients..." 
-                    value={searchTerm}
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px' }}>
+        <div style={{ color: 'white', fontSize: '1.5rem', fontWeight: 'bold' }}>Foodly Cookbook</div>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push('/add')}>
+          Add Recipe
+        </Button>
+      </Header>
+      <Content style={{ padding: '24px 48px' }}>
+        <div
+          style={{
+            background: colorBgContainer,
+            minHeight: 280,
+            padding: 24,
+            borderRadius: borderRadiusLG,
+          }}
+        >
+          <Row gutter={[16, 16]} style={{ marginBottom: 24 }} align="bottom">
+            <Col xs={24} md={16}>
+                <div style={{ marginBottom: 8 }}><Text strong>Search</Text></div>
+                <Search
+                    placeholder="Search titles, ingredients..."
+                    allowClear
+                    size="large"
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
             </Col>
-            <Col md={3}>
-                <Form.Label>Sort By</Form.Label>
-                <Form.Select 
-                    value={sortOrder} 
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSortOrder(e.target.value as 'newest' | 'oldest')}
+            <Col xs={24} md={8}>
+                <div style={{ marginBottom: 8 }}><Text strong>Sort By</Text></div>
+                <Select
+                    defaultValue="newest"
+                    size="large"
+                    style={{ width: '100%' }}
+                    onChange={(value) => setSortOrder(value as 'newest' | 'oldest')}
                 >
-                    <option value="newest">Newest Added</option>
-                    <option value="oldest">Oldest Added</option>
-                </Form.Select>
+                    <Option value="newest">Newest Added</Option>
+                    <Option value="oldest">Oldest Added</Option>
+                </Select>
             </Col>
-        </Row>
+          </Row>
 
-        {allTags.length > 0 && (
-            <div className="mb-4">
-                <p className="mb-2 text-muted small uppercase fw-bold">Filter by Tags:</p>
-                <div className="d-flex flex-wrap gap-2">
+          {allTags.length > 0 && (
+             <div style={{ marginBottom: 24 }}>
+                <Text type="secondary" style={{ display: 'block', marginBottom: 8, textTransform: 'uppercase', fontSize: '12px', fontWeight: 'bold' }}>Filter by Tags:</Text>
+                <Space wrap size={[0, 8]}>
                     {allTags.map(tag => (
-                        <Badge 
+                        <Tag.CheckableTag
                             key={tag}
-                            bg={selectedTags.includes(tag) ? "primary" : "light"}
-                            text={selectedTags.includes(tag) ? "white" : "dark"}
-                            className="border cursor-pointer user-select-none"
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => toggleTag(tag)}
+                            checked={selectedTags.includes(tag)}
+                            onChange={(checked) => toggleTag(tag, checked)}
                         >
                             {tag}
-                        </Badge>
+                        </Tag.CheckableTag>
                     ))}
                     {selectedTags.length > 0 && (
-                        <Button variant="link" size="sm" className="text-decoration-none p-0 ms-2" onClick={() => setSelectedTags([])}>
+                        <Button type="link" size="small" onClick={() => setSelectedTags([])}>
                             Clear
                         </Button>
                     )}
-                </div>
-            </div>
-        )}
+                </Space>
+             </div>
+          )}
 
-        {isLoading ? (
-            <div className="text-center py-5">
-                <Spinner animation="border" />
-            </div>
-        ) : (
-            <Row xs={1} md={2} lg={3} className="g-4">
-                {filteredRecipes.map((recipe: Recipe) => (
-                    <Col key={recipe.id || Math.random()}>
-                        <RecipeCard 
-                            recipe={recipe} 
-                            onClick={() => router.push(`/recipes/${recipe.id}`)} 
-                        />
-                    </Col>
-                ))}
-                {filteredRecipes.length === 0 && (
-                    <Col xs={12} className="text-center py-5 text-muted">
-                        <h4>No recipes found</h4>
-                        <p>Try adjusting your search or filters.</p>
-                    </Col>
-                )}
-            </Row>
-        )}
-      </Container>
-    </>
+          {isLoading ? (
+             <div style={{ textAlign: 'center', padding: '50px 0' }}>
+                 <Spin size="large" />
+             </div>
+          ) : (
+             <>
+                 <Row gutter={[24, 24]}>
+                    {filteredRecipes.map((recipe) => (
+                        <Col xs={24} sm={12} lg={8} key={recipe.id || Math.random()}>
+                            <RecipeCard 
+                                recipe={recipe} 
+                                onClick={() => router.push(`/recipes/${recipe.id}`)} 
+                            />
+                        </Col>
+                    ))}
+                 </Row>
+                 {filteredRecipes.length === 0 && (
+                    <Empty description="No recipes found. Try adjusting your search or filters." />
+                 )}
+             </>
+          )}
+        </div>
+      </Content>
+    </Layout>
   );
 }

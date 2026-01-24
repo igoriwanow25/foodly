@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Form, Button, InputGroup, Spinner } from 'react-bootstrap';
+import { Input } from 'antd';
+
+const { Search } = Input;
 
 interface RecipeSearchProps {
   onSearch: (url: string) => void;
@@ -11,41 +13,25 @@ interface RecipeSearchProps {
 export const RecipeSearch: React.FC<RecipeSearchProps> = ({ onSearch, isLoading }) => {
   const [url, setUrl] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (url.trim()) {
-      onSearch(url.trim());
+  const handleSearch = (value: string) => {
+    if (value.trim()) {
+      onSearch(value.trim());
     }
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="mb-4">
-      <InputGroup size="lg">
-        <Form.Control
-          placeholder="Paste recipe URL here..."
-          aria-label="Recipe URL"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          disabled={isLoading}
+    <div style={{ marginBottom: '1.5rem' }}>
+        <Search
+            placeholder="Paste recipe URL here..."
+            allowClear
+            enterButton="Scrape Recipe"
+            size="large"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onSearch={handleSearch}
+            loading={isLoading}
+            disabled={isLoading}
         />
-        <Button variant="primary" type="submit" disabled={isLoading || !url.trim()}>
-          {isLoading ? (
-            <>
-              <Spinner
-                as="span"
-                animation="border"
-                size="sm"
-                role="status"
-                aria-hidden="true"
-                className="me-2"
-              />
-              Scraping...
-            </>
-          ) : (
-            'Scrape Recipe'
-          )}
-        </Button>
-      </InputGroup>
-    </Form>
+    </div>
   );
 };

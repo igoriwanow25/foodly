@@ -1,52 +1,59 @@
 'use client';
 
 import React from 'react';
-import { Card, Badge } from 'react-bootstrap';
+import { Card, Tag as AntTag, Typography } from 'antd';
 import { Recipe } from '../lib/types';
-import { Tag } from '@prisma/client';
+
+const { Meta } = Card;
+const { Text } = Typography;
 
 interface RecipeCardProps {
-  recipe: Recipe & { tags: Tag[] };
+  recipe: Recipe;
   onClick: () => void;
 }
 
 export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   return (
-    <Card className="h-100 shadow-sm recipe-card" style={{ cursor: 'pointer', transition: 'transform 0.2s' }} onClick={onClick}>
-      {recipe.imagePath && (
-        <Card.Img 
-            variant="top" 
-            src={recipe.imagePath} 
-            style={{ height: '200px', objectFit: 'cover' }} 
-        />
-      )}
-      <Card.Body>
-        <Card.Title className="text-truncate" title={recipe.title}>
-            {recipe.title}
-        </Card.Title>
-        <div className="mb-2">
-            {recipe.tags && recipe.tags.length > 0 ? (
-                recipe.tags.map((tag, idx: number) => (
-                    <Badge 
-                        key={idx} 
-                        bg="light" 
-                        text="dark" 
-                        className="me-1 mb-1 border"
-                        style={{ fontWeight: 'normal' }}
-                    >
-                        {tag.name}
-                    </Badge>
+    <Card
+      hoverable
+      onClick={onClick}
+      style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+      styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column' } }}
+      cover={
+        recipe.imagePath ? (
+          <div style={{ height: 200, overflow: 'hidden' }}>
+             <img
+                alt={recipe.title}
+                src={recipe.imagePath}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+             />
+          </div>
+        ) : null
+      }
+    >
+      <Meta
+        title={recipe.title}
+        description={
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+            <div style={{ marginBottom: 8 }}>
+              {recipe.tags && recipe.tags.length > 0 ? (
+                recipe.tags.map((tag, idx) => (
+                  <AntTag key={idx} style={{ marginRight: 4, marginBottom: 4 }}>
+                    {tag.name}
+                  </AntTag>
                 ))
-            ) : (
-                <small className="text-muted">No tags</small>
-            )}
-        </div>
-        <Card.Text className="small text-muted">
-            {recipe.prepTime ? `${recipe.prepTime} min` : ''} 
-            {recipe.prepTime && recipe.servings ? ' • ' : ''}
-            {recipe.servings ? `${recipe.servings} servings` : ''}
-        </Card.Text>
-      </Card.Body>
+              ) : (
+                <Text type="secondary" style={{ fontSize: '12px' }}>No tags</Text>
+              )}
+            </div>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {recipe.prepTime ? `${recipe.prepTime} min` : ''}
+              {recipe.prepTime && recipe.servings ? ' • ' : ''}
+              {recipe.servings ? `${recipe.servings} servings` : ''}
+            </Text>
+          </div>
+        }
+      />
     </Card>
   );
 };
