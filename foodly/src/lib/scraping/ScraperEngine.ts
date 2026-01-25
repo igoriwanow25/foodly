@@ -4,17 +4,20 @@ import { Recipe } from './types';
 import { JsonLdStrategy } from './strategies/JsonLdStrategy';
 import { HtmlFallbackStrategy } from './strategies/HtmlFallbackStrategy';
 import { FacebookStrategy } from './strategies/FacebookStrategy';
+import { InstagramStrategy } from './strategies/InstagramStrategy';
 
 export class ScraperEngine {
   private jsonLdStrategy: JsonLdStrategy;
   private htmlFallbackStrategy: HtmlFallbackStrategy;
   private facebookStrategy: FacebookStrategy;
+  private instagramStrategy: InstagramStrategy;
   private userAgent: string;
 
   constructor() {
     this.jsonLdStrategy = new JsonLdStrategy();
     this.htmlFallbackStrategy = new HtmlFallbackStrategy();
     this.facebookStrategy = new FacebookStrategy();
+    this.instagramStrategy = new InstagramStrategy();
     this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   }
 
@@ -42,6 +45,15 @@ export class ScraperEngine {
       if (url.includes('jadlonomia.com')) {
           fs.writeFileSync('debug_full.html', html);
           console.log('[DEBUG] Saved debug_full.html');
+      }
+
+      // 0. Instagram Strategy (Specific)
+      if (url.includes('instagram.com')) {
+          console.log(`[Scraper] Using InstagramStrategy for ${url}`);
+          const igResult = this.instagramStrategy.scrape(html, url);
+          if (igResult && igResult.ingredients.length > 0) {
+              return igResult;
+          }
       }
 
       // 0. Facebook Strategy (Specific)

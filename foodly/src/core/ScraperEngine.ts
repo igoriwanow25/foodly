@@ -2,15 +2,18 @@ import axios from 'axios';
 import { Recipe } from './types';
 import { JsonLdStrategy } from './strategies/JsonLdStrategy';
 import { HtmlFallbackStrategy } from './strategies/HtmlFallbackStrategy';
+import { InstagramStrategy } from './strategies/InstagramStrategy';
 
 export class ScraperEngine {
   private jsonLdStrategy: JsonLdStrategy;
   private htmlFallbackStrategy: HtmlFallbackStrategy;
+  private instagramStrategy: InstagramStrategy;
   private userAgent: string;
 
   constructor() {
     this.jsonLdStrategy = new JsonLdStrategy();
     this.htmlFallbackStrategy = new HtmlFallbackStrategy();
+    this.instagramStrategy = new InstagramStrategy();
     this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
   }
 
@@ -35,6 +38,12 @@ export class ScraperEngine {
       });
 
       const html = response.data;
+
+      if (url.includes('instagram.com')) {
+        console.log(`[Scraper] Trying InstagramStrategy for ${url}`);
+        return this.instagramStrategy.extract(html, url);
+      }
+      
       if (url.includes('jadlonomia.com')) {
           const fs = require('fs');
           fs.writeFileSync('debug_full.html', html);

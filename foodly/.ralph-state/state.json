@@ -1,18 +1,11 @@
 {
-  "id": "loop-1737769200000",
-  "status": "completed",
-  "goal": "zadbaj o to żeby url zapisywał się automatycznie przy dodawaniu przepisu przez url. Rozbij zmiany na kroki, testuj każdy krok i nie wracaj dopóki nie będziesz miał 100% pewności że kod działa bez żadnego zarzutu",
-  "iteration": 2,
+  "id": "loop-20260125-instagram-fix",
+  "status": "complete",
+  "goal": "Fix SyntaxError in InstagramStrategy.ts and verify with provided URLs.",
+  "iteration": 3,
   "maxIterations": 100,
   "completionPromise": "COMPLETE",
-  "startTime": "2026-01-24T02:00:00.000Z",
-  "lastUpdate": "2026-01-24T02:15:00.000Z",
-  "notes": [
-    "Loop started",
-    "Identified mismatch between ScrapedRecipe (url, image) and Prisma Recipe (sourceUrl, imagePath)",
-    "Created reproduction unit test",
-    "Implemented mapping in src/app/add/page.tsx",
-    "Verified fix with updated unit test",
-    "Cleaned up test file"
-  ]
+  "startTime": "2026-01-25T12:25:00.000Z",
+  "lastUpdate": "2026-01-25T12:45:00.000Z",
+  "notes": ["Iteration 1: Identified file corruption and axios mock issue.", "Iteration 2: Fixed file, unmocked axios, improved regex parsing for Polish.", "Iteration 3: Verified all URLs pass."]
 }
