@@ -1,17 +1,11 @@
 {
-  "id": "loop-1737768000000",
-  "status": "completed",
-  "goal": "wyczyść wyniki testów",
-  "iteration": 2,
+  "id": "loop-20260125-instagram-fix",
+  "status": "complete",
+  "goal": "Fix SyntaxError in InstagramStrategy.ts and verify with provided URLs.",
+  "iteration": 3,
   "maxIterations": 100,
   "completionPromise": "COMPLETE",
-  "startTime": "2026-01-24T01:30:00.000Z",
-  "lastUpdate": "2026-01-24T01:45:00.000Z",
-  "notes": [
-    "Loop started",
-    "Created unit test tests/unit/FacebookStrategy.test.ts to persist logic verification",
-    "Removed e2e tests tests/e2e/facebook.test.ts and tests/e2e/english_recipes_bulk.test.ts",
-    "Removed heavy fixtures tests/fixtures/facebook and tests/fixtures/english_recipes",
-    "Removed temporary scripts"
-  ]
+  "startTime": "2026-01-25T12:25:00.000Z",
+  "lastUpdate": "2026-01-25T12:45:00.000Z",
+  "notes": ["Iteration 1: Identified file corruption and axios mock issue.", "Iteration 2: Fixed file, unmocked axios, improved regex parsing for Polish.", "Iteration 3: Verified all URLs pass."]
 }

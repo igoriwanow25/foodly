@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "test:integration": "tsx tests/integration/db_and_image.test.ts",
+    "test:integration:instagram": "jest --config jest.integration.config.js tests/integration/instagram_scraper.test.ts",
     "test:e2e": "tsx tests/e2e/scraper_full.test.ts",
     "test": "npm run test:integration && npm run test:e2e",
     "depcheck": "depcheck",
